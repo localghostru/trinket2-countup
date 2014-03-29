@@ -3,6 +3,11 @@
     - fireworks on win
     - ding on correct click, atata on incorrect
     - green frame on correct click, red on incorrect
+    - docking menu
+    
+    - exclude lightgray tile colors
+    - add special character-pause to typed text?
+    - add nice (not handcoded) parameter tuning for typedtext
 */
 
 Main.Playstate = function(game) {};
@@ -21,6 +26,17 @@ const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3]
 Main.Playstate.prototype = {
     create: function() {
         this.generateLevel();
+        
+        var underrect = game.add.bitmapData(290, 125);
+        underrect.ctx.rect(0, 0, 290, 125);
+        underrect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        underrect.ctx.fill();
+        var underlay = game.add.sprite((300 - 290) / 2, 5, underrect);
+        var menu = game.add.group();
+        menu.add(underlay);
+        t = new TypedText(30, 10, "  Hello!\nWelcome to CountUp!\nClick on the rectangle\nlabeled with '1'.",
+                          {font: '24px Arial', fill:'#ffff20', align:'left'}, true);
+        menu.add(t);
     },
     
     update: function() {
@@ -34,15 +50,14 @@ Main.Playstate.prototype = {
         this.columns = MAP_SIZE[this.numbers][0];
         this.rows = MAP_SIZE[this.numbers][1];
         
-        var cellSpacing = 3;
-        var cellSize = Math.min(Math.floor(PLAY_AREA_WIDTH / this.columns), Math.floor(PLAY_AREA_HEIGHT / this.rows)) - cellSpacing;
-        
-        var tileMapX = (Main.width - this.columns * (cellSize + cellSpacing)) / 2;
-        var tileMapY = TOP_BAR_HEIGHT + (Main.height - TOP_BAR_HEIGHT - this.rows * (cellSize + cellSpacing)) / 2;
-        
         this.tm = new TileMap(this.columns, this.rows);
         this.randomizeTiles();
         this.randomizeNumbers();
+        
+        var cellSpacing = 3;
+        var cellSize = Math.min(Math.floor(PLAY_AREA_WIDTH / this.columns), Math.floor(PLAY_AREA_HEIGHT / this.rows)) - cellSpacing;
+        var tileMapX = (Main.width - this.columns * (cellSize + cellSpacing)) / 2;
+        var tileMapY = TOP_BAR_HEIGHT + (Main.height - TOP_BAR_HEIGHT - this.rows * (cellSize + cellSpacing)) / 2;
         
         this.tm.draw(tileMapX, tileMapY, cellSize, cellSpacing);
     },
@@ -60,6 +75,12 @@ Main.Playstate.prototype = {
             nIndex = Math.floor(Math.random() * untaken.length);
             this.tm.tiles[i].attachNumber(untaken[nIndex]);
             untaken.splice(nIndex, 1);
+        }
+    },
+    
+    clickedOnTile: function(tileN) {
+        if(tileN == 1) {
+            console.log ("great!");
         }
     }
 }
@@ -141,6 +162,10 @@ Tile.prototype = {
     
     onClickHandler: function(item) {
         console.log(this.number);
+        console.log(game.state);
+        // Either way works, ask on forum
+        game.state.states.Playstate.clickedOnTile(this.number);
+        game.state.callbackContext.clickedOnTile(this.number);
     }
 }
 
@@ -237,4 +262,52 @@ TileMap.prototype = {
             this.tiles[i].draw(topX, topY, cellSize, cellSpacing);
     }
         
+}
+
+TypedText = function(x, y, text, style, startNow) {
+    Phaser.Text.call(this, game, x, y, '', style);
+    this.typingSound = game.add.audio('typing', 0.2, false);
+    this.unTypedText = text;
+    this.typingDelayMin = 40;
+    this.typingDelayMax = 100;
+    this.delayBeforeCallback = 500;
+    if(startNow) {
+        this.typing = true;
+        this.nextTypeTime = game.time.now;
+    }
+    else {
+        this.typing = false;
+    }
+}
+
+TypedText.prototype = Object.create(Phaser.Text.prototype);
+TypedText.prototype.constructor = TypedText;
+TypedText.prototype.update = function() {
+    if(!this.typing) return;
+    
+    if(game.time.now > this.nextTypeTime) {
+        if(this.unTypedText == '') {
+            // Just finished
+            if(this.callback) this.callback(this);
+            this.typing = false;
+            return;
+        }
+        
+        this.text = this.text + this.unTypedText.charAt(0);
+        this.unTypedText = this.unTypedText.slice(1);
+        this.nextTypeTime = game.time.now + this.typingDelayMin +
+                            Math.random() * (this.typingDelayMax - this.typingDelayMin);
+        this.typingSound.play();
+        
+        if(this.unTypedText == '') this.nextTypeTime += this.delayBeforeCallback;
+    }   
+}
+
+TypedText.prototype.startTyping = function() {
+    this.typing = true;
+    this.nextTypeTime = game.time.now;
+}
+
+TypedText.prototype.addOnComplete = function(callback) {
+    this.callback = callback;
 }
