@@ -1,19 +1,20 @@
 /* Feature list
     - two-sided game, with flipping
-    - fireworks on win
+    - fireworks on win (at least sound!, one of the main TODOs :))
     v ding on correct click, atata on incorrect
     v green frame on correct click, red on incorrect
-    - docking menu?
+    - menu (docking?) --- main TODO
     
     - exclude lightgray tile colors
     - add special character-pause to typed text?
     - add nice (not handcoded) parameter tuning for typedtext
     
-    - sound mute icon/code
+    - sound mute icon/code --- second to main TODO
     v winning overlay
-    - localstorage?
+    - localstorage? --- most likely one of the main TODOs :)
     - try not counting the time when the game is paused
     - statistics: longest to find number
+    - next number on by default --- one of the main TODOs
     
     menu items: restart, last +1, last +5 (or max), last -1, last -5 (or min),
         option to show/hide next number to look for
@@ -29,15 +30,16 @@ const TOP_BAR_HEIGHT = 30;
 const PLAY_AREA_WIDTH = Main.width - 4 * STD_SPACING;
 const PLAY_AREA_HEIGHT = Main.height - 2 * STD_SPACING - TOP_BAR_HEIGHT;
 const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3], [3, 4], [3, 4],
-                  [3, 5], [3, 5], [3, 5], [4, 5], [4, 5], [4, 5], [4, 6], [4, 6], [4, 6], [4, 7],
-                  [4, 7], [4, 7], [4, 7], [4, 7], [5, 7], [5, 7], [5, 7], [5, 8], [5, 8], [5, 8],
-                  [5, 8], [5, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8],
+                  [4, 4], [4, 4], [4, 4], [4, 5], [4, 5], [4, 5], [4, 6], [4, 6], [4, 6], [4, 6],
+                  [5, 6], [5, 6], [5, 6], [5, 6], [5, 7], [5, 7], [5, 7], [5, 7], [6, 7], [6, 7],
+                  [6, 7], [6, 7], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8],
                   [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8]];
 
 
 Main.Playstate.prototype = {
     create: function() {
         this.gameIsOn = false;
+        this.tutorialIsOn = true;
         this.numbers = 3;
         this.tileLayer = game.add.group();
         this.tm = new TileMap(this.tileLayer);
@@ -257,17 +259,20 @@ Main.Playstate.prototype = {
         
         if(tile.number == this.nextExpected) {
             
-            if(this.nextExpected == 1)
-                this.btmText.setNewText("Great! Now the second one.", true);
-            else if(this.nextExpected == 2)
-                this.btmText.setNewText("Right. The last one, please.", true);
-            else if(this.nextExpected == 3) {
-                this.btmText.setNewText("Now you know how to play!", true);
-                this.btmText.setOnComplete(function (thisText) {
-                        game.add.tween(game.state.callbackContext.tutorialOverlay).
-                            to({y: Main.height + 10}, 500, Phaser.Easing.Cubic.Out, true);
-                        thisText.cancelOnComplete();
-                    }, 1000);
+            if(this.tutorialIsOn) {
+                if(this.nextExpected == 1)
+                    this.btmText.setNewText("Great! Now the second one.", true);
+                else if(this.nextExpected == 2)
+                    this.btmText.setNewText("Right. The last one, please.", true);
+                else if(this.nextExpected == 3) {
+                    this.btmText.setNewText("Now you know how to play!", true);
+                    this.btmText.setOnComplete(function (thisText) {
+                            game.add.tween(game.state.callbackContext.tutorialOverlay).
+                                to({y: Main.height + 10}, 500, Phaser.Easing.Cubic.Out, true);
+                            thisText.cancelOnComplete();
+                        }, 1000);
+                    this.tutorialIsOn = false;   
+                }
             }
             
             this.nextExpected++;
