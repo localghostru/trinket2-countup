@@ -13,9 +13,9 @@ Main.Loader.prototype = {
     },
     
     create: function() {
-        Main.Assets.correctSound = game.add.audio('correct', 0.4, false);
-        Main.Assets.wrongSound = game.add.audio('wrong', 0.4, false);
-        Main.Assets.typingSound = game.add.audio('typing', 0.2, false);
+        Main.Assets.correctSound = game.add.audio('correct', 0.6, false);
+        Main.Assets.wrongSound = game.add.audio('wrong', 0.6, false);
+        Main.Assets.typingSound = game.add.audio('typing', 0.3, false);
         
         game.state.start('Playstate');
     }
