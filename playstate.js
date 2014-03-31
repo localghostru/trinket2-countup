@@ -1,8 +1,8 @@
 /* Feature list
     - two-sided game, with flipping
     - fireworks on win
-    - ding on correct click, atata on incorrect
-    - green frame on correct click, red on incorrect
+    v ding on correct click, atata on incorrect
+    v green frame on correct click, red on incorrect
     - docking menu
     
     - exclude lightgray tile colors
@@ -25,6 +25,7 @@ const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3]
 
 Main.Playstate.prototype = {
     create: function() {
+        this.gameIsOn = false;
         this.generateLevel();
         
         var topRect = game.add.bitmapData(290, 65);
@@ -49,10 +50,29 @@ Main.Playstate.prototype = {
         game.add.tween(this.btmUnderlay).to({x: 5}, 500, Phaser.Easing.Cubic.In, true);
         this.topText.addOnComplete(function () { game.state.callbackContext.btmText.startTyping(); }, 200);
         this.btmText.addOnComplete(function () {
+            game.state.callbackContext.gameIsOn = true;
             game.add.tween(game.state.callbackContext.topUnderlay).to({y: -70}, 500, Phaser.Easing.Cubic.Out, true);
             game.add.tween(game.state.callbackContext.topText).to({y: -65}, 500, Phaser.Easing.Cubic.Out, true);
             // add menu here 
         }, 200);
+        
+        var menuBtnRect = game.add.bitmapData(50, 25);
+        menuBtnRect.ctx.lineWidth = 1;
+        menuBtnRect.ctx.strokeStyle = 'rgba(64,64,64,1)';
+        menuBtnRect.ctx.rect(0, 0, 80, 30);
+        menuBtnRect.ctx.stroke();
+        menuBtnRect.ctx.beginPath();
+        menuBtnRect.ctx.rect(1, 1, 80 - 3, 30 - 3);
+        menuBtnRect.ctx.fillStyle = 'rgba(255,255,192,1)';
+        menuBtnRect.ctx.fill();
+        var menuBtnLabel = game.add.text(4, 4, "Menu", {font: 'bold 16px Arial', fill:'#000'});
+        
+        this.menuButton = game.add.group();
+        this.menuButton.create(0, 0, menuBtnRect);
+        this.menuButton.add(menuBtnLabel);
+        this.menuButton.x = 10;
+        this.menuButton.y = 5;
+        //this.menuButton.visible = false;
     },
     
     update: function() {
@@ -96,6 +116,8 @@ Main.Playstate.prototype = {
     },
     
     clickedOnTile: function(tile) {
+        if(!this.gameIsOn) return;
+        
         if(tile.number == this.nextExpected) {
             
             if(this.nextExpected == 1)
@@ -103,10 +125,13 @@ Main.Playstate.prototype = {
             else if(this.nextExpected == 2)
                 this.btmText.setNewText("Right. The last one, please.", true);
             else if(this.nextExpected == 3)
-                this.btmText.setNewText("Perfect! You know how to play.", true);
+                this.btmText.setNewText("Now you know how to play!", true);
             
             this.nextExpected++;
+            tile.correctlyClicked();
         }
+        else
+            tile.wronglyClicked();
     }
 }
 
@@ -163,13 +188,14 @@ Tile.prototype = {
         var myLabelHeight = 20;
         
         var rect = game.add.bitmapData(myWidth, myHeight);
+        rect.ctx.lineWidth = 1;
+        rect.ctx.strokeStyle = 'rgba(64,64,64,1)';
         rect.ctx.rect(0, 0, myWidth, myHeight);
+        rect.ctx.stroke();
+        rect.ctx.beginPath();
+        rect.ctx.rect(1, 1, myWidth - 2, myHeight - 2);
         rect.ctx.fillStyle = 'rgba(' + this.randColor() + ',' + this.randColor() + ',' + this.randColor() + ',1)';
         rect.ctx.fill();
-        
-        /*rect.beginFill(this.randColor());
-        rect.drawRect(0, 0, myWidth, myHeight);
-        rect.endFill();*/
         
         this.image = game.add.sprite(myTopX, myTopY, rect);
         
@@ -179,10 +205,36 @@ Tile.prototype = {
         
         this.image.inputEnabled = true;
         this.image.events.onInputDown.add(this.onClickHandler, this);
+        
+        var wrongFrameRect = game.add.bitmapData(myWidth + 4, myHeight + 4);
+        wrongFrameRect.ctx.lineWidth = 4;
+        wrongFrameRect.ctx.strokeStyle = 'rgba(255,0,0,1)';
+        wrongFrameRect.ctx.rect(0, 0, myWidth + 4, myHeight + 4);
+        wrongFrameRect.ctx.stroke();
+        this.wrongFrame = game.add.sprite(myTopX - 2, myTopY - 2, wrongFrameRect);
+        this.wrongFrame.alpha = 0;
+        
+        var correctFrameRect = game.add.bitmapData(myWidth + 4, myHeight + 4);
+        correctFrameRect.ctx.lineWidth = 4;
+        correctFrameRect.ctx.strokeStyle = 'rgba(0,255,0,1)';
+        correctFrameRect.ctx.rect(0, 0, myWidth + 4, myHeight + 4);
+        correctFrameRect.ctx.stroke();
+        this.correctFrame = game.add.sprite(myTopX - 2, myTopY - 2, correctFrameRect);
+        this.correctFrame.alpha = 0;
     },
     
     randColor: function() {
         return Math.floor(LOWEST_COLOR + Math.random() * (255 - LOWEST_COLOR)); 
+    },
+    
+    correctlyClicked: function() {
+        game.add.tween(this.correctFrame).to({alpha: 1}, 300, Phaser.Easing.Quadratic.OUT, true, 0, 1, true);
+        Main.Assets.correctSound.play();
+    },
+    
+    wronglyClicked: function() {
+        game.add.tween(this.wrongFrame).to({alpha: 1}, 300, Phaser.Easing.Quadratic.OUT, true, 0, 1, true);
+        Main.Assets.wrongSound.play();
     },
     
     onClickHandler: function(item) {
@@ -222,11 +274,9 @@ TileMap.prototype = {
             tile = this.tileAt(x, y);
             
             okToExtend = true;
-//            console.log(x, y, dir);
             if(dir % 2 == 0 && tile.cellsX > allowedIncrease ||
                dir % 2 == 1 && tile.cellsY > allowedIncrease) {
                 okToExtend = false;
-//                console.log("Too big extension - denying");
             }
             else {
                 nextTiles = [];
@@ -235,7 +285,6 @@ TileMap.prototype = {
                     nextTileY = tile.occupied[i].y + D[dir][1];
                     
                     if(!this.hasTile(nextTileX, nextTileY)) {
-//                        console.log("Some tile in this direction doesn't exist - denying");
                         okToExtend = false;
                         break;
                     }
@@ -246,7 +295,6 @@ TileMap.prototype = {
                         
                         // So far, for simplicity, only allowing to "consume" tiles that are single yet.
                         if(!nextTile.isSingle) {
-//                            console.log("Can't extend to a non-single tile - denying");
                             okToExtend = false;
                             break;
                         }
@@ -290,7 +338,6 @@ TileMap.prototype = {
 
 TypedText = function(x, y, text, style, startNow) {
     Phaser.Text.call(this, game, x, y, '', style);
-    this.typingSound = game.add.audio('typing', 0.2, false);
     this.unTypedText = text;
     this.typingDelayMin = 40;
     this.typingDelayMax = 100;
@@ -317,7 +364,7 @@ TypedText.prototype.update = function() {
         this.unTypedText = this.unTypedText.slice(1);
         this.nextTypeTime = game.time.now + this.typingDelayMin +
                             Math.random() * (this.typingDelayMax - this.typingDelayMin);
-        this.typingSound.play();
+        Main.Assets.typingSound.play();
         
         if(this.unTypedText == '' && this.callback)
             this.nextTypeTime += this.delayBeforeCallback;
