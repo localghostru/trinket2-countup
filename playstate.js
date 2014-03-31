@@ -27,16 +27,38 @@ Main.Playstate.prototype = {
     create: function() {
         this.generateLevel();
         
-        var underrect = game.add.bitmapData(290, 125);
-        underrect.ctx.rect(0, 0, 290, 125);
-        underrect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
-        underrect.ctx.fill();
-        var underlay = game.add.sprite((300 - 290) / 2, 5, underrect);
-        var menu = game.add.group();
-        menu.add(underlay);
-        t = new TypedText(30, 10, "  Hello!\nWelcome to CountUp!\nClick on the rectangle\nlabeled with '1'.",
-                          {font: '24px Arial', fill:'#ffff20', align:'left'}, true);
-        menu.add(t);
+        var topRect = game.add.bitmapData(290, 65);
+        topRect.ctx.rect(0, 0, 290, 65);
+        topRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        topRect.ctx.fill();
+        this.topUnderlay = game.add.sprite(-300, 5, topRect);
+        this.topText = new TypedText(30, 10, "\tHello!\nWelcome to CountUp!",
+                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
+        game.add.existing(this.topText);
+        game.add.tween(this.topUnderlay).to({x: 5}, 500, Phaser.Easing.Cubic.In, true).
+            onComplete.add(function() { game.state.callbackContext.topText.startTyping(); });
+        
+        var btmRect = game.add.bitmapData(290, 40);
+        btmRect.ctx.rect(0, 0, 290, 40);
+        btmRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        btmRect.ctx.fill();
+        this.btmUnderlay = game.add.sprite(300, 355, btmRect);
+        this.btmText = new TypedText(10, 360, "Click on the '1' rectangle.",
+                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
+        /*var btmText2 = new TypedText(10, 360, "Great! Now the '2' one.",
+                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
+        var btmText3 = new TypedText(10, 360, "Yep. The last one, please.",
+                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
+        var btmText4 = new TypedText(10, 360, "Perfect! You know how to play.",
+                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);*/
+        game.add.existing(this.btmText);
+        game.add.tween(this.btmUnderlay).to({x: 5}, 500, Phaser.Easing.Cubic.In, true);
+        this.topText.addOnComplete(function () { game.state.callbackContext.btmText.startTyping(); }, 200);
+        this.btmText.addOnComplete(function () {
+            game.add.tween(game.state.callbackContext.topUnderlay).to({y: -70}, 500, Phaser.Easing.Cubic.Out, true);
+            game.add.tween(game.state.callbackContext.topText).to({y: -65}, 500, Phaser.Easing.Cubic.Out, true);
+            // add menu here 
+        }, 200);
     },
     
     update: function() {
@@ -50,7 +72,7 @@ Main.Playstate.prototype = {
         this.columns = MAP_SIZE[this.numbers][0];
         this.rows = MAP_SIZE[this.numbers][1];
         
-        this.tm = new TileMap(this.columns, this.rows);
+        this.tm = new TileMap(this.columns, this.rows, this.clickedOnTile);
         this.randomizeTiles();
         this.randomizeNumbers();
         
@@ -78,15 +100,14 @@ Main.Playstate.prototype = {
         }
     },
     
-    clickedOnTile: function(tileN) {
-        if(tileN == 1) {
-            console.log ("great!");
-        }
+    clickedOnTile: function(tile) {
+        
     }
 }
 
-Tile = function (x, y) {
+Tile = function (x, y, onClickCallback) {
     this.occupied = [new Phaser.Point(x, y)];
+    this.onClickCallback = onClickCallback;
     this.cellsX = 1;
     this.cellsY = 1;
     this.isSingle = true;
@@ -161,15 +182,14 @@ Tile.prototype = {
     },
     
     onClickHandler: function(item) {
-        console.log(this.number);
-        console.log(game.state);
         // Either way works, ask on forum
-        game.state.states.Playstate.clickedOnTile(this.number);
-        game.state.callbackContext.clickedOnTile(this.number);
+        //game.state.states.Playstate.clickedOnTile(this.number);
+        //game.state.callbackContext.clickedOnTile(this.number);
+        this.onClickCallback(this);
     }
 }
 
-TileMap = function (cellsX, cellsY) {
+TileMap = function (cellsX, cellsY, onTileClickCallback) {
     var tile, i, j;
     
     this.cellsX = cellsX;
@@ -179,7 +199,7 @@ TileMap = function (cellsX, cellsY) {
     
     for(i = 0; i < cellsY; i++)
         for(j = 0; j < cellsX; j++) {
-            tile = new Tile(j, i);
+            tile = new Tile(j, i, onTileClickCallback);
             this.tiles.push(tile);
             this.map.push(tile);
         }
@@ -270,14 +290,10 @@ TypedText = function(x, y, text, style, startNow) {
     this.unTypedText = text;
     this.typingDelayMin = 40;
     this.typingDelayMax = 100;
-    this.delayBeforeCallback = 500;
-    if(startNow) {
-        this.typing = true;
-        this.nextTypeTime = game.time.now;
-    }
-    else {
+    if(startNow) 
+        this.startTyping();
+    else
         this.typing = false;
-    }
 }
 
 TypedText.prototype = Object.create(Phaser.Text.prototype);
@@ -299,7 +315,8 @@ TypedText.prototype.update = function() {
                             Math.random() * (this.typingDelayMax - this.typingDelayMin);
         this.typingSound.play();
         
-        if(this.unTypedText == '') this.nextTypeTime += this.delayBeforeCallback;
+        if(this.unTypedText == '' && this.callback)
+            this.nextTypeTime += this.delayBeforeCallback;
     }   
 }
 
@@ -308,6 +325,19 @@ TypedText.prototype.startTyping = function() {
     this.nextTypeTime = game.time.now;
 }
 
-TypedText.prototype.addOnComplete = function(callback) {
+TypedText.prototype.setNewText = function(text, startNow) {
+    startNow = typeof startNow !== 'undefined' ? startNow : false;
+    // Ideally it should have a third parameter defining it we should wait for the current text to end typing. TODO for the future.
+    this.text = '';
+    this.unTypedText = text;
+    if(startNow)
+        this.startTyping();
+    else
+        this.typing = false;
+}
+
+TypedText.prototype.addOnComplete = function(callback, delay) {
+    delay = typeof delay !== 'undefined' ? delay : 0;
     this.callback = callback;
+    this.delayBeforeCallback = delay;
 }
