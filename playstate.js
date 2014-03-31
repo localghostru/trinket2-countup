@@ -10,7 +10,7 @@
     - add nice (not handcoded) parameter tuning for typedtext
     
     - sound mute icon/code
-    - winning overlay
+    v winning overlay
     - localstorage?
     - try not counting the time when the game is paused
     - statistics: longest to find number
@@ -39,6 +39,8 @@ Main.Playstate.prototype = {
     create: function() {
         this.gameIsOn = false;
         this.numbers = 3;
+        this.tileLayer = game.add.group();
+        this.tm = new TileMap(this.tileLayer);
         this.generateLevel();
         
         this.menuBar = game.add.group();
@@ -86,7 +88,7 @@ Main.Playstate.prototype = {
         btnRect.ctx.stroke();
         btnRect.ctx.beginPath();
         btnRect.ctx.rect(1, 1, btnRect.width - 2, btnRect.height - 2);
-        btnRect.ctx.fillStyle = 'rgba(96,96,96,0.85)';
+        btnRect.ctx.fillStyle = 'rgba(96,96,96,0.75)';
         btnRect.ctx.fill();
         var btn1 = game.add.sprite(0, 100, btnRect);
         var btn2 = game.add.sprite(0, 131, btnRect);
@@ -101,10 +103,10 @@ Main.Playstate.prototype = {
         var btn1Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 100, "Play once again",
                                      {font: 'bold 14pt Arial', fill:'#ffffff'});
         btn1Text.anchor.setTo(0.5);
-        var btn2Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 131, "Next number (" + (this.numbers + 1) + ")",
+        var btn2Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 131, "Play next number",
                                      {font: 'bold 14pt Arial', fill:'#ffffff'});
         btn2Text.anchor.setTo(0.5);
-        var btn3Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 162, "Play 5 higher (" + (this.numbers + 5) + ")",
+        var btn3Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 162, "Play 5 higher",
                                      {font: 'bold 14pt Arial', fill:'#ffffff'});
         btn3Text.anchor.setTo(0.5);
         
@@ -185,43 +187,44 @@ Main.Playstate.prototype = {
     },
     
     startAgain: function() {
-        this.generateLevel();
+        this.generateLevel(true);
         this.runGame();
     },
     
     startNext: function() {
         this.numbers++;
         if(this.numbers >= MAP_SIZE.length) this.numbers = MAP_SIZE.length - 1;
-        this.generateLevel();
+        this.generateLevel(true);
         this.runGame();
     },
     
     startPrev: function() {
         this.numbers--;
         if(this.numbers < 3) this.numbers = 3;
-        this.generateLevel();
+        this.generateLevel(true);
         this.runGame();
     },
     
     startFiveHigher: function() {
         this.numbers += 5;
         if(this.numbers >= MAP_SIZE.length) this.numbers = MAP_SIZE.length - 1;
-        this.generateLevel();
+        this.generateLevel(true);
         this.runGame();
     },
     
     startFiveLower: function() {
         this.numbers -= 5;
         if(this.numbers < 3) this.numbers = 3;
-        this.generateLevel();
+        this.generateLevel(true);
         this.runGame();
     },
         
-    generateLevel: function() {
+    generateLevel: function(destroyOld) {
         this.columns = MAP_SIZE[this.numbers][0];
         this.rows = MAP_SIZE[this.numbers][1];
         
-        this.tm = new TileMap(this.columns, this.rows);
+        if(destroyOld) this.tm.destroy();
+        this.tm.initialize(this.columns, this.rows);
         this.randomizeTiles();
         this.randomizeNumbers();
         
@@ -290,10 +293,11 @@ Main.Playstate.prototype = {
     }
 }
 
-Tile = function (x, y) {
+Tile = function (x, y, layer) {
     this.occupied = [new Phaser.Point(x, y)];
     this.cellsX = 1;
     this.cellsY = 1;
+    this.layer = layer;
     this.isSingle = true;
 };
 
@@ -353,13 +357,20 @@ Tile.prototype = {
         rect.ctx.fill();
         
         this.image = game.add.sprite(myTopX, myTopY, rect);
+        this.image.inputEnabled = true;
+        this.image.events.onInputDown.add(this.onClickHandler, this);
         
         this.label = game.add.text(myTopX + (myWidth - myLabelWidth) / 2, myTopY + (myHeight - myLabelHeight) / 2,
                                    this.number.toString(),
                                    {font: '24px Arial', fill:'#202020'});
         
-        this.image.inputEnabled = true;
-        this.image.events.onInputDown.add(this.onClickHandler, this);
+        var correctFrameRect = game.add.bitmapData(myWidth + 4, myHeight + 4);
+        correctFrameRect.ctx.lineWidth = 4;
+        correctFrameRect.ctx.strokeStyle = 'rgba(0,255,0,1)';
+        correctFrameRect.ctx.rect(0, 0, myWidth + 4, myHeight + 4);
+        correctFrameRect.ctx.stroke();
+        this.correctFrame = game.add.sprite(myTopX - 2, myTopY - 2, correctFrameRect);
+        this.correctFrame.alpha = 0;
         
         var wrongFrameRect = game.add.bitmapData(myWidth + 4, myHeight + 4);
         wrongFrameRect.ctx.lineWidth = 4;
@@ -369,13 +380,10 @@ Tile.prototype = {
         this.wrongFrame = game.add.sprite(myTopX - 2, myTopY - 2, wrongFrameRect);
         this.wrongFrame.alpha = 0;
         
-        var correctFrameRect = game.add.bitmapData(myWidth + 4, myHeight + 4);
-        correctFrameRect.ctx.lineWidth = 4;
-        correctFrameRect.ctx.strokeStyle = 'rgba(0,255,0,1)';
-        correctFrameRect.ctx.rect(0, 0, myWidth + 4, myHeight + 4);
-        correctFrameRect.ctx.stroke();
-        this.correctFrame = game.add.sprite(myTopX - 2, myTopY - 2, correctFrameRect);
-        this.correctFrame.alpha = 0;
+        this.layer.add(this.image);
+        this.layer.add(this.label);
+        this.layer.add(this.correctFrame);
+        this.layer.add(this.wrongFrame);
     },
     
     randColor: function() {
@@ -395,30 +403,50 @@ Tile.prototype = {
     },
     
     onClickHandler: function(item) {
-        // Either way works, ask on forum
-        //game.state.states.Playstate.clickedOnTile(this.number);
-        //game.state.callbackContext.clickedOnTile(this.number);
         game.state.callbackContext.clickedOnTile(this);
+    },
+    
+    destroy: function() {
+        this.image.destroy();
+        this.label.destroy();
+        this.correctFrame.destroy();
+        this.wrongFrame.destroy();
+        this.occupied = null;
     }
 }
 
-TileMap = function (cellsX, cellsY) {
-    var tile, i, j;
-    
-    this.cellsX = cellsX;
-    this.cellsY = cellsY;
-    this.tiles = [];        // Tile list - will shrink as compound tiles are forming
-    this.map = [];          // Pointers from (x, y) location to compound tile holding it
-    
-    for(i = 0; i < cellsY; i++)
-        for(j = 0; j < cellsX; j++) {
-            tile = new Tile(j, i);
-            this.tiles.push(tile);
-            this.map.push(tile);
-        }
+TileMap = function (layer) {
+    this.layer = layer;
 }
 
 TileMap.prototype = {
+    initialize: function(cellsX, cellsY) {
+        var tile, i, j;
+        this.cellsX = cellsX;
+        this.cellsY = cellsY;
+        this.tiles = [];        // Tile list - will shrink as compound tiles are forming
+        this.map = [];          // Pointers from (x, y) location to compound tile holding it
+        
+        for(i = 0; i < cellsY; i++)
+            for(j = 0; j < cellsX; j++) {
+                tile = new Tile(j, i, this.layer);
+                this.tiles.push(tile);
+                this.map.push(tile);
+            }
+    },
+    
+    destroy: function() {
+        var i;
+        
+        for(i = 0; i < this.tiles.length; i++) {
+            this.tiles[i].destroy();
+            this.tiles[i] = null;
+        }
+        for(i = 0; i < this.map.length; i++) {
+            this.map[i] = null;
+        }
+    },
+    
     extendSomeTile: function(allowedIncrease) {
         var x, y, dir, tile;
         var nextTileX, nextTileY, nextTile, nextTiles;
@@ -496,8 +524,8 @@ TileMap.prototype = {
 TypedText = function(x, y, text, style, startNow) {
     Phaser.Text.call(this, game, x, y, '', style);
     this.unTypedText = text;
-    this.typingDelayMin = 60;
-    this.typingDelayMax = 90;
+    this.typingDelayMin = 50;
+    this.typingDelayMax = 80;
     if(startNow) 
         this.startTyping();
     else
