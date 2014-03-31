@@ -8,6 +8,13 @@
     - exclude lightgray tile colors
     - add special character-pause to typed text?
     - add nice (not handcoded) parameter tuning for typedtext
+    
+    - sound mute icon/code
+    - winning overlay
+    - localstorage?
+    
+    menu items: restart, last +1, last +5 (or max), last -1, last -5 (or min),
+        option to show/hide next number to look for
 */
 
 Main.Playstate = function(game) {};
@@ -22,60 +29,108 @@ const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3]
                   [4, 7], [4, 7], [4, 7], [4, 7], [5, 7], [5, 7], [5, 7], [5, 8], [5, 8], [5, 8],
                   [5, 8], [5, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8],
                   [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8]];
+const STD_SPACING = Main.width / 60;
 
 Main.Playstate.prototype = {
     create: function() {
         this.gameIsOn = false;
         this.generateLevel();
         
-        var topRect = game.add.bitmapData(290, 65);
-        topRect.ctx.rect(0, 0, 290, 65);
-        topRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
-        topRect.ctx.fill();
-        this.topUnderlay = game.add.sprite(-300, 5, topRect);
-        this.topText = new TypedText(30, 10, "\tHello!\nWelcome to CountUp!",
-                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
-        game.add.existing(this.topText);
-        game.add.tween(this.topUnderlay).to({x: 5}, 500, Phaser.Easing.Cubic.In, true).
-            onComplete.add(function() { game.state.callbackContext.topText.startTyping(); });
-        
-        var btmRect = game.add.bitmapData(290, 40);
-        btmRect.ctx.rect(0, 0, 290, 40);
-        btmRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
-        btmRect.ctx.fill();
-        this.btmUnderlay = game.add.sprite(300, 355, btmRect);
-        this.btmText = new TypedText(10, 365, "Click on the '1' rectangle.",
-                          {font: '20px Arial', fill:'#ffff20', align:'left'}, false);
-        game.add.existing(this.btmText);
-        game.add.tween(this.btmUnderlay).to({x: 5}, 500, Phaser.Easing.Cubic.In, true);
-        this.topText.addOnComplete(function () { game.state.callbackContext.btmText.startTyping(); }, 200);
-        this.btmText.addOnComplete(function () {
-            game.state.callbackContext.gameIsOn = true;
-            game.add.tween(game.state.callbackContext.topUnderlay).to({y: -70}, 500, Phaser.Easing.Cubic.Out, true);
-            game.add.tween(game.state.callbackContext.topText).to({y: -65}, 500, Phaser.Easing.Cubic.Out, true);
-            // add menu here 
-        }, 200);
-        
+        this.menuBar = game.add.group();
         var menuBtnRect = game.add.bitmapData(50, 25);
-        menuBtnRect.ctx.lineWidth = 1;
+        menuBtnRect.ctx.lineWidth = 2;
         menuBtnRect.ctx.strokeStyle = 'rgba(64,64,64,1)';
-        menuBtnRect.ctx.rect(0, 0, 80, 30);
+        menuBtnRect.ctx.rect(0, 0, 50, 25);
         menuBtnRect.ctx.stroke();
         menuBtnRect.ctx.beginPath();
-        menuBtnRect.ctx.rect(1, 1, 80 - 3, 30 - 3);
-        menuBtnRect.ctx.fillStyle = 'rgba(255,255,192,1)';
+        menuBtnRect.ctx.rect(1, 1, 50 - 3, 25 - 3);
+        menuBtnRect.ctx.fillStyle = 'rgba(192,255,192,1)';
         menuBtnRect.ctx.fill();
         var menuBtnLabel = game.add.text(4, 4, "Menu", {font: 'bold 16px Arial', fill:'#000'});
-        
         this.menuButton = game.add.group();
         this.menuButton.create(0, 0, menuBtnRect);
         this.menuButton.add(menuBtnLabel);
         this.menuButton.x = 10;
         this.menuButton.y = 5;
-        //this.menuButton.visible = false;
+        
+        this.timePassedLabel = game.add.text(90, 10, "Time passed", {font: 'bold 16px Arial', fill:'#000'});
+        
+        this.menuBar.add(this.menuButton);
+        this.menuBar.add(this.timePassedLabel);
+        
+        this.menuBar.x = this.menuBar.y = 0;
+        this.menuBar.visible = false;
+        
+        
+        
+        
+        this.levelWonOverlay = game.add.group();
+        var levelWonRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 150);
+        levelWonRect.ctx.rect(0, 0, Main.width - 2 * STD_SPACING, 150);
+        levelWonRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        levelWonRect.ctx.fill();
+        var levelWonTitleLabel = game.add.text(levelWonRect.width / 2, 25, "Congratulations!", 
+                                               {font: '24px Arial', fill:'#ffff20'});
+        this.levelWonTimeLabel = game.add.text(levelWonRect.width / 2, 70, "Done in",
+                                               {font: '24px Arial', fill:'#ffff20'});
+        levelWonTitleLabel.anchor.setTo(0.5);
+        this.levelWonTimeLabel.anchor.setTo(0.5);
+        this.levelWonOverlay.create(0, 0, levelWonRect);
+        this.levelWonOverlay.add(levelWonTitleLabel);
+        this.levelWonOverlay.add(this.levelWonTimeLabel);
+        this.levelWonOverlay.x = 5;
+        this.levelWonOverlay.visible = false;
+        
+        
+        this.helloOverlay = game.add.group();
+        var topRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 65);
+        topRect.ctx.rect(0, 0, Main.width - 2 * STD_SPACING, 65);
+        topRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        topRect.ctx.fill();
+        this.topText = new TypedText(2 * STD_SPACING, STD_SPACING,
+                                    "\t\tHello!\nWelcome to CountUp!",
+                                    {font: '18pt Arial', fill:'#ffff20', align:'left'}, false);
+        this.helloOverlay.create(0, 0, topRect);
+        this.helloOverlay.add(this.topText);
+        this.helloOverlay.x = -Main.width;
+        this.helloOverlay.y = STD_SPACING;
+        
+        game.add.tween(this.helloOverlay).to({x: STD_SPACING}, 500, Phaser.Easing.Cubic.In, true).
+            onComplete.add(function() { game.state.callbackContext.topText.startTyping(); });
+        
+        this.tutorialOverlay = game.add.group();
+        var btmRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 35);
+        btmRect.ctx.rect(0, 0, Main.width - 2 * STD_SPACING, 35);
+        btmRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        btmRect.ctx.fill();
+        
+        this.btmText = new TypedText(STD_SPACING * 2, STD_SPACING, "Click on the '1' rectangle.",
+                          {font: '16pt Arial', fill:'#ffff20', align:'left'}, false);
+        this.tutorialOverlay.create(0, 0, btmRect);
+        this.tutorialOverlay.add(this.btmText);
+        this.tutorialOverlay.x = Main.width;
+        this.tutorialOverlay.y = Main.height - btmRect.height - STD_SPACING;
+        console.log(this.tutorialOverlay.height);
+        
+        game.add.tween(this.tutorialOverlay).to({x: STD_SPACING}, 500, Phaser.Easing.Cubic.In, true);
+        
+        this.topText.setOnComplete(function () { 
+            game.state.callbackContext.btmText.startTyping();            
+        });
+        this.btmText.setOnComplete(function (thisText) {
+            game.state.callbackContext.startTime = game.time.now;
+            game.state.callbackContext.gameIsOn = true;
+            game.state.callbackContext.menuBar.visible = true;            
+            game.add.tween(game.state.callbackContext.helloOverlay).to({y: -70}, 500, Phaser.Easing.Cubic.Out, true);
+            game.add.tween(game.state.callbackContext.topText).to({y: -65}, 500, Phaser.Easing.Cubic.Out, true);
+            thisText.cancelOnComplete();
+        });
+       
     },
     
     update: function() {
+        if(!this.gameIsOn) return;
+        this.timePassedLabel.setText("Time passed: " + Math.round((game.time.now - this.startTime) / 1000));
     },
     
     render: function() {
@@ -83,6 +138,7 @@ Main.Playstate.prototype = {
     
     generateLevel: function() {
         this.numbers = 3;
+        this.startTime = game.time.now;
         this.nextExpected = 1;
         this.columns = MAP_SIZE[this.numbers][0];
         this.rows = MAP_SIZE[this.numbers][1];
@@ -130,8 +186,24 @@ Main.Playstate.prototype = {
             this.nextExpected++;
             tile.correctlyClicked();
         }
-        else
+        else {
             tile.wronglyClicked();
+        }
+        
+        if(tile.number == this.numbers) {
+            // Done!
+            console.log("done");
+            this.gameIsOn = false;
+            
+            var winTime = Math.round((game.time.now - this.startTime) / 1000)
+            
+            this.levelWonTimeLabel.setText("Done in " + winTime +
+                                           " second" + ((winTime > 1)?"s":"") + "!");
+            
+            this.levelWonOverlay.y = -200;
+            this.levelWonOverlay.visible = true;
+            game.add.tween(this.levelWonOverlay).to({y: 100}, 300, Phaser.Easing.Cubic.Out, true);
+        }
     }
 }
 
@@ -360,7 +432,7 @@ TypedText.prototype.update = function() {
             return;
         }
         
-        this.text = this.text + this.unTypedText.charAt(0);
+        this.setText(this.text + this.unTypedText.charAt(0));
         this.unTypedText = this.unTypedText.slice(1);
         this.nextTypeTime = game.time.now + this.typingDelayMin +
                             Math.random() * (this.typingDelayMax - this.typingDelayMin);
@@ -379,7 +451,7 @@ TypedText.prototype.startTyping = function() {
 TypedText.prototype.setNewText = function(text, startNow) {
     startNow = typeof startNow !== 'undefined' ? startNow : false;
     // Ideally it should have a third parameter defining it we should wait for the current text to end typing. TODO for the future.
-    this.text = '';
+    this.setText('');
     this.unTypedText = text;
     if(startNow)
         this.startTyping();
@@ -387,8 +459,12 @@ TypedText.prototype.setNewText = function(text, startNow) {
         this.typing = false;
 }
 
-TypedText.prototype.addOnComplete = function(callback, delay) {
+TypedText.prototype.setOnComplete = function(callback, delay) {
     delay = typeof delay !== 'undefined' ? delay : 0;
     this.callback = callback;
     this.delayBeforeCallback = delay;
+}
+
+TypedText.prototype.cancelOnComplete = function() {
+    this.callback = null;
 }
