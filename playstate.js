@@ -43,14 +43,8 @@ Main.Playstate.prototype = {
         btmRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
         btmRect.ctx.fill();
         this.btmUnderlay = game.add.sprite(300, 355, btmRect);
-        this.btmText = new TypedText(10, 360, "Click on the '1' rectangle.",
-                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
-        /*var btmText2 = new TypedText(10, 360, "Great! Now the '2' one.",
-                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
-        var btmText3 = new TypedText(10, 360, "Yep. The last one, please.",
-                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);
-        var btmText4 = new TypedText(10, 360, "Perfect! You know how to play.",
-                          {font: '24px Arial', fill:'#ffff20', align:'left'}, false);*/
+        this.btmText = new TypedText(10, 365, "Click on the '1' rectangle.",
+                          {font: '20px Arial', fill:'#ffff20', align:'left'}, false);
         game.add.existing(this.btmText);
         game.add.tween(this.btmUnderlay).to({x: 5}, 500, Phaser.Easing.Cubic.In, true);
         this.topText.addOnComplete(function () { game.state.callbackContext.btmText.startTyping(); }, 200);
@@ -69,10 +63,11 @@ Main.Playstate.prototype = {
     
     generateLevel: function() {
         this.numbers = 3;
+        this.nextExpected = 1;
         this.columns = MAP_SIZE[this.numbers][0];
         this.rows = MAP_SIZE[this.numbers][1];
         
-        this.tm = new TileMap(this.columns, this.rows, this.clickedOnTile);
+        this.tm = new TileMap(this.columns, this.rows);
         this.randomizeTiles();
         this.randomizeNumbers();
         
@@ -101,13 +96,22 @@ Main.Playstate.prototype = {
     },
     
     clickedOnTile: function(tile) {
-        
+        if(tile.number == this.nextExpected) {
+            
+            if(this.nextExpected == 1)
+                this.btmText.setNewText("Great! Now the '2' one.", true);
+            else if(this.nextExpected == 2)
+                this.btmText.setNewText("Right. The last one, please.", true);
+            else if(this.nextExpected == 3)
+                this.btmText.setNewText("Perfect! You know how to play.", true);
+            
+            this.nextExpected++;
+        }
     }
 }
 
-Tile = function (x, y, onClickCallback) {
+Tile = function (x, y) {
     this.occupied = [new Phaser.Point(x, y)];
-    this.onClickCallback = onClickCallback;
     this.cellsX = 1;
     this.cellsY = 1;
     this.isSingle = true;
@@ -185,11 +189,11 @@ Tile.prototype = {
         // Either way works, ask on forum
         //game.state.states.Playstate.clickedOnTile(this.number);
         //game.state.callbackContext.clickedOnTile(this.number);
-        this.onClickCallback(this);
+        game.state.callbackContext.clickedOnTile(this);
     }
 }
 
-TileMap = function (cellsX, cellsY, onTileClickCallback) {
+TileMap = function (cellsX, cellsY) {
     var tile, i, j;
     
     this.cellsX = cellsX;
@@ -199,7 +203,7 @@ TileMap = function (cellsX, cellsY, onTileClickCallback) {
     
     for(i = 0; i < cellsY; i++)
         for(j = 0; j < cellsX; j++) {
-            tile = new Tile(j, i, onTileClickCallback);
+            tile = new Tile(j, i);
             this.tiles.push(tile);
             this.map.push(tile);
         }
