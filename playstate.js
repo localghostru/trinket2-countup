@@ -45,134 +45,14 @@ Main.Playstate.prototype = {
         this.tm = new NumberedTileMap(this.tileLayer);
         this.generateLevel();
         
-        this.menuBar = game.add.group();
-        var menuBtnRect = game.add.bitmapData(Main.width / 6, TOP_BAR_HEIGHT - STD_SPACING);
-        menuBtnRect.ctx.lineWidth = 2;
-        menuBtnRect.ctx.strokeStyle = 'rgba(64,64,64,1)';
-        menuBtnRect.ctx.rect(0, 0, menuBtnRect.width, menuBtnRect.height);
-        menuBtnRect.ctx.stroke();
-        menuBtnRect.ctx.beginPath();
-        menuBtnRect.ctx.rect(1, 1, menuBtnRect.width - 3, menuBtnRect.height - 3);
-        menuBtnRect.ctx.fillStyle = 'rgba(192,255,192,1)';
-        menuBtnRect.ctx.fill();
-        var menuBtnLabel = game.add.text(4, 4, "Menu", {font: 'bold 16px Arial', fill:'#000'});
-        this.menuButton = game.add.group();
-        this.menuButton.create(0, 0, menuBtnRect);
-        this.menuButton.add(menuBtnLabel);
-        this.menuButton.x = (Main.width -  PLAY_AREA_WIDTH) / 2;
-        this.menuButton.y = STD_SPACING;
-        
-        this.timePassedLabel = game.add.text(90, 9, "Time passed: ", {font: 'bold 16px Arial', fill:'#000'});
-        
-        this.menuBar.add(this.menuButton);
-        this.menuBar.add(this.timePassedLabel);
-        
-        this.menuBar.x = this.menuBar.y = 0;
-        this.menuBar.visible = false;
-        
-        
-        this.levelWonOverlay = game.add.group();
-        var levelWonRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 193);
-        levelWonRect.ctx.rect(0, 0, levelWonRect.width, levelWonRect.height);
-        levelWonRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
-        levelWonRect.ctx.fill();
-        var levelWonTitleLabel = game.add.text(levelWonRect.width / 2, 25, "Congratulations!", 
-                                               {font: 'bold 22pt Arial', fill:'#ffffff'});
-        this.levelWonTimeLabel = game.add.text(levelWonRect.width / 2, 70, "Done in",
-                                               {font: '20pt Arial', fill:'#ffffff'});
-        levelWonTitleLabel.anchor.setTo(0.5);
-        this.levelWonTimeLabel.anchor.setTo(0.5);
-
-        var btnRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 30);
-        btnRect.ctx.lineWidth = 1;
-        btnRect.ctx.strokeStyle = 'rgba(192,192,192,1)';
-        btnRect.ctx.rect(-1, 0, btnRect.width + 2, btnRect.height);
-        btnRect.ctx.stroke();
-        btnRect.ctx.beginPath();
-        btnRect.ctx.rect(1, 1, btnRect.width - 2, btnRect.height - 2);
-        btnRect.ctx.fillStyle = 'rgba(96,96,96,0.75)';
-        btnRect.ctx.fill();
-        var btn1 = game.add.sprite(0, 100, btnRect);
-        var btn2 = game.add.sprite(0, 131, btnRect);
-        var btn3 = game.add.sprite(0, 162, btnRect);
-        btn1.inputEnabled = btn2.inputEnabled = btn3.inputEnabled = true;
-        btn1.events.onInputDown.add(this.startAgain, this);
-        btn2.events.onInputDown.add(this.startNext, this);
-        btn3.events.onInputDown.add(this.startFiveHigher, this);
-        //TODO: check if next and +5 are avaiable
-        //this.image.inputEnabled = true;
-        //this.image.events.onInputDown.add(this.onClickHandler, this);
-        var btn1Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 100, "Play once again",
-                                     {font: 'bold 14pt Arial', fill:'#ffffff'});
-        btn1Text.anchor.setTo(0.5);
-        var btn2Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 131, "Play next number",
-                                     {font: 'bold 14pt Arial', fill:'#ffffff'});
-        btn2Text.anchor.setTo(0.5);
-        var btn3Text = game.add.text(btnRect.width / 2, btnRect.height / 2 + 162, "Play 5 higher",
-                                     {font: 'bold 14pt Arial', fill:'#ffffff'});
-        btn3Text.anchor.setTo(0.5);
-        
-        this.levelWonOverlay.create(0, 0, levelWonRect);
-        this.levelWonOverlay.add(levelWonTitleLabel);
-        this.levelWonOverlay.add(this.levelWonTimeLabel);
-        this.levelWonOverlay.add(btn1);
-        this.levelWonOverlay.add(btn2);
-        this.levelWonOverlay.add(btn3);
-        this.levelWonOverlay.add(btn1Text);
-        this.levelWonOverlay.add(btn2Text);
-        this.levelWonOverlay.add(btn3Text);
-        
-        this.levelWonOverlay.x = 5;
-        this.levelWonOverlay.y = -200;
-        this.levelWonOverlay.visible = false;
-        
-        
-        this.helloOverlay = game.add.group();
-        var topRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 65);
-        topRect.ctx.rect(0, 0, topRect.width, topRect.height);
-        topRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
-        topRect.ctx.fill();
-        this.topText = new TypedText(4 * STD_SPACING, STD_SPACING,
-                                    "\t\tHello!\nWelcome to CountUp!",
-                                    {font: '18pt Arial', fill:'#ffff20', align:'left'}, false);
-        this.helloOverlay.create(0, 0, topRect);
-        this.helloOverlay.add(this.topText);
-        this.helloOverlay.x = -Main.width;
-        this.helloOverlay.y = STD_SPACING;
-        
-        game.add.tween(this.helloOverlay).to({x: STD_SPACING}, 500, Phaser.Easing.Cubic.In, true).
-            onComplete.add(function() { game.state.callbackContext.topText.startTyping(); });
-        
-        this.tutorialOverlay = game.add.group();
-        var btmRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 35);
-        btmRect.ctx.rect(0, 0, btmRect.width, btmRect.height);
-        btmRect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
-        btmRect.ctx.fill();
-        
-        this.btmText = new TypedText(STD_SPACING * 2, STD_SPACING, "Click on the first rectangle.",
-                          {font: '16pt Arial', fill:'#ffff20', align:'left'}, false);
-        this.tutorialOverlay.create(0, 0, btmRect);
-        this.tutorialOverlay.add(this.btmText);
-        this.tutorialOverlay.x = Main.width;
-        this.tutorialOverlay.y = Main.height - btmRect.height - STD_SPACING;
-        
-        game.add.tween(this.tutorialOverlay).to({x: STD_SPACING}, 500, Phaser.Easing.Cubic.In, true);
-        this.topText.setOnComplete(function () { 
-            game.state.states[game.state.current].btmText.startTyping();            
-        });
-        this.btmText.setOnComplete(function (thisText) {
-            game.state.callbackContext.runGame();
-            game.state.callbackContext.menuBar.visible = true;            
-            game.add.tween(game.state.callbackContext.helloOverlay).to({y: -70}, 500, Phaser.Easing.Cubic.Out, true);
-            game.add.tween(game.state.callbackContext.topText).to({y: -65}, 500, Phaser.Easing.Cubic.Out, true);
-            thisText.cancelOnComplete();
-        });
-       
+        this.createMenuBar();
+        this.createOverlays();
+        this.initializeInterface();
     },
     
     update: function() {
         if(!this.gameIsOn) return;
-        this.timePassedLabel.setText("Time passed: " + Math.round((game.time.now - this.startTime) / 1000));
+        this.timePassedLabel.setText("Time: " + Math.round((game.time.now - this.startTime) / 1000));
     },
     
     render: function() {
@@ -183,40 +63,16 @@ Main.Playstate.prototype = {
             game.add.tween(this.levelWonOverlay).to({y: -200}, 300, Phaser.Easing.Cubic.Out, true);
         }
         this.nextExpected = 1;
+        this.findNumberLabel.setText("Find #1");
         this.startTime = game.time.now;
         this.timePassed = 0;
         this.gameIsOn = true;
     },
     
-    startAgain: function() {
-        this.generateLevel(true);
-        this.runGame();
-    },
-    
-    startNext: function() {
-        this.numbers++;
-        if(this.numbers >= MAP_SIZE.length) this.numbers = MAP_SIZE.length - 1;
-        this.generateLevel(true);
-        this.runGame();
-    },
-    
-    startPrev: function() {
-        this.numbers--;
+    startLevel: function(number) {
+        this.numbers = number;
         if(this.numbers < 3) this.numbers = 3;
-        this.generateLevel(true);
-        this.runGame();
-    },
-    
-    startFiveHigher: function() {
-        this.numbers += 5;
-        if(this.numbers >= MAP_SIZE.length) this.numbers = MAP_SIZE.length - 1;
-        this.generateLevel(true);
-        this.runGame();
-    },
-    
-    startFiveLower: function() {
-        this.numbers -= 5;
-        if(this.numbers < 3) this.numbers = 3;
+        else if(this.numbers >= MAP_SIZE.length) this.numbers = MAP_SIZE.length - 1;
         this.generateLevel(true);
         this.runGame();
     },
@@ -290,11 +146,173 @@ Main.Playstate.prototype = {
                 this.levelWonOverlay.y = -200;
                 this.levelWonOverlay.visible = true;
                 game.add.tween(this.levelWonOverlay).to({y: 100}, 300, Phaser.Easing.Cubic.Out, true);
+                this.findNumberLabel.setText("Done");
+            }
+            else {
+                this.findNumberLabel.setText("Find #" + this.nextExpected);
             }
         }
         else {
             tile.wronglyClicked();
         }
+    },
+    
+    // Interface creation functions
+    createPlate: function(width, height) {
+        var underrect = game.add.bitmapData(width, height);
+        underrect.ctx.rect(0, 0, underrect.width, underrect.height);
+        underrect.ctx.fillStyle = 'rgba(40,40,40,0.85)';
+        underrect.ctx.fill();
+        underrect.ctx.beginPath();
+        underrect.ctx.lineWidth = 2;
+        underrect.ctx.strokeStyle = 'rgba(0,0,0,1)';
+        underrect.ctx.rect(0, 0, underrect.width, underrect.height);
+        underrect.ctx.stroke();
+        
+        return underrect;
+    },
+    
+    createWideButton: function(yPosition, clickHandler) {
+        // Creates a button of a very specific kind, suitable for menu and level won overlays.
+        var btnRect = game.add.bitmapData(Main.width - 2 * STD_SPACING, 30);
+        btnRect.ctx.lineWidth = 1;
+        btnRect.ctx.strokeStyle = 'rgba(192,192,192,1)';
+        btnRect.ctx.rect(-1, 0, btnRect.width + 2, btnRect.height);
+        btnRect.ctx.stroke();
+        btnRect.ctx.beginPath();
+        btnRect.ctx.rect(1, 1, btnRect.width - 2, btnRect.height - 2);
+        btnRect.ctx.fillStyle = 'rgba(96,96,96,0.75)';
+        btnRect.ctx.fill();
+        
+        var button = game.add.sprite(0, yPosition, btnRect);
+        button.inputEnabled = true;
+        button.events.onInputDown.add(clickHandler, this);
+        
+        return button;
+    },
+    
+    createMenuBar: function() {
+        this.menuBar = game.add.group();
+        
+        var menuBarBitmapData = game.add.bitmapData(Main.width, TOP_BAR_HEIGHT);
+        menuBarBitmapData.ctx.rect(0, 0, menuBarBitmapData.width, menuBarBitmapData.height);
+        menuBarBitmapData.ctx.fillStyle = 'rgba(128,128,128,1)';
+        menuBarBitmapData.ctx.fill();
+        menuBarBitmapData.ctx.beginPath();
+        menuBarBitmapData.ctx.lineWidth = 1;
+        menuBarBitmapData.ctx.strokeStyle = 'rgba(224,224,224,1)';
+        menuBarBitmapData.ctx.moveTo(0, 1);
+        menuBarBitmapData.ctx.lineTo(Main.width / 3, 1);
+        menuBarBitmapData.ctx.lineTo(Main.width / 3, TOP_BAR_HEIGHT);
+        menuBarBitmapData.ctx.lineTo(Main.width * 2 / 3, TOP_BAR_HEIGHT);
+        menuBarBitmapData.ctx.lineTo(Main.width * 2 / 3, 1);
+        menuBarBitmapData.ctx.lineTo(Main.width, 1);
+        menuBarBitmapData.ctx.stroke();
+        
+        this.menuBar.create(0, 0, menuBarBitmapData);
+        
+        this.findNumberLabel = game.add.text(Main.width / 6, TOP_BAR_HEIGHT / 2,
+                                             "Find #", {font: 'bold 16px Arial', fill:'#000'});
+        this.findNumberLabel.anchor.setTo(0.5);
+        var menuBtnLabel = game.add.text(Main.width / 2, TOP_BAR_HEIGHT / 2, "Menu",
+                                         {font: 'bold 16px Arial', fill:'#ffff90'});
+        menuBtnLabel.anchor.setTo(0.5);
+        this.timePassedLabel = game.add.text(Main.width * 5 / 6, TOP_BAR_HEIGHT / 2,
+                                             "Time: ", {font: 'bold 16px Arial', fill:'#000'});
+        this.timePassedLabel.anchor.setTo(0.5);
+        
+        this.menuBar.add(this.findNumberLabel);
+        this.menuBar.add(menuBtnLabel);
+        this.menuBar.add(this.timePassedLabel);
+        
+        this.menuBar.x = this.menuBar.y = 0;
+        this.menuBar.visible = false;
+    },
+    
+    createOverlays: function() {
+        
+        // Create top overlay with hello message.
+        this.helloOverlay = game.add.group();
+        this.helloOverlay.create(0, 0, this.createPlate(Main.width - 2 * STD_SPACING, 65));
+        
+        this.topText = new TypedText(4 * STD_SPACING, STD_SPACING,
+                                    "\t\tHello!\nWelcome to CountUp!",
+                                    {font: '18pt Arial', fill:'#ffff20', align:'left'}, false);
+        this.helloOverlay.add(this.topText);
+        
+        this.helloOverlay.x = -Main.width;
+        this.helloOverlay.y = STD_SPACING;
+        
+        // Create bottom overlay with tutorial hints.
+        this.tutorialOverlay = game.add.group();
+        this.tutorialOverlay.create(0, 0, this.createPlate(Main.width - 2 * STD_SPACING, 35));
+        
+        this.btmText = new TypedText(STD_SPACING * 2, STD_SPACING, "Click on the first rectangle.",
+                          {font: '16pt Arial', fill:'#ffff20', align:'left'}, false);
+        this.tutorialOverlay.add(this.btmText);
+        
+        this.tutorialOverlay.x = Main.width;
+        this.tutorialOverlay.y = Main.height - 35 - STD_SPACING;
+        
+        // Create interlevel overlay for winning the game level
+        this.levelWonOverlay = game.add.group();
+        this.levelWonOverlay.create(0, 0, this.createPlate(Main.width - 2 * STD_SPACING, 193));
+        
+        var levelWonTitleLabel = game.add.text((Main.width - 2 * STD_SPACING) / 2, 25, "Congratulations!", 
+                                               {font: 'bold 22pt Arial', fill:'#ffffff'});
+        levelWonTitleLabel.anchor.setTo(0.5);
+        this.levelWonTimeLabel = game.add.text((Main.width - 2 * STD_SPACING) / 2, 70, "Done in",
+                                               {font: '20pt Arial', fill:'#ffffff'});        
+        this.levelWonTimeLabel.anchor.setTo(0.5);
+        
+        //TODO: check if next and +5 are avaiable
+        //this.image.inputEnabled = true;
+        //this.image.events.onInputDown.add(this.onClickHandler, this);
+        var btn1Text = game.add.text((Main.width - 2 * STD_SPACING) / 2, 15 + 100, "Play once again",
+                                     {font: 'bold 14pt Arial', fill:'#ffffff'});
+        btn1Text.anchor.setTo(0.5);
+        var btn2Text = game.add.text((Main.width - 2 * STD_SPACING) / 2, 15 + 131, "Play next number",
+                                     {font: 'bold 14pt Arial', fill:'#ffffff'});
+        btn2Text.anchor.setTo(0.5);
+        var btn3Text = game.add.text((Main.width - 2 * STD_SPACING) / 2, 15 + 162, "Play 5 higher",
+                                     {font: 'bold 14pt Arial', fill:'#ffffff'});
+        btn3Text.anchor.setTo(0.5);
+        
+        var btn1 = this.createWideButton(100, function() { this.startLevel(this.numbers); });
+        var btn2 = this.createWideButton(131, function() { this.startLevel(this.numbers + 1); });
+        var btn3 = this.createWideButton(162, function() { this.startLevel(this.numbers + 5); });
+        
+        this.levelWonOverlay.add(levelWonTitleLabel);
+        this.levelWonOverlay.add(this.levelWonTimeLabel);
+        this.levelWonOverlay.add(btn1);
+        this.levelWonOverlay.add(btn2);
+        this.levelWonOverlay.add(btn3);
+        this.levelWonOverlay.add(btn1Text);
+        this.levelWonOverlay.add(btn2Text);
+        this.levelWonOverlay.add(btn3Text);
+        
+        this.levelWonOverlay.x = 5;
+        this.levelWonOverlay.y = -200;
+        this.levelWonOverlay.visible = false;
+    },
+    
+    initializeInterface: function () {
+        // Moves created overlays onto screen. This also launches the text typing on completion.
+        game.add.tween(this.helloOverlay).to({x: STD_SPACING}, 500, Phaser.Easing.Cubic.In, true).
+            onComplete.add(function() { game.state.callbackContext.topText.startTyping(); });
+        game.add.tween(this.tutorialOverlay).to({x: STD_SPACING}, 500, Phaser.Easing.Cubic.In, true);
+        
+        // Starts bottom text typing and runs first game.
+        this.topText.setOnComplete(function () { 
+            game.state.states[game.state.current].btmText.startTyping();            
+        });
+        this.btmText.setOnComplete(function (thisText) {
+            game.state.callbackContext.runGame();
+            game.state.callbackContext.menuBar.visible = true;            
+            game.add.tween(game.state.callbackContext.helloOverlay).to({y: -70}, 500, Phaser.Easing.Cubic.Out, true);
+            game.add.tween(game.state.callbackContext.topText).to({y: -65}, 500, Phaser.Easing.Cubic.Out, true);
+            thisText.cancelOnComplete();
+        });
     }
 }
 
