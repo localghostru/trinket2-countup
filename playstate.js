@@ -15,6 +15,7 @@
     - try not counting the time when the game is paused
     - statistics: longest to find number
     v next number on by default
+    - 7x9 field for latest numbers, decide where to stop :) 
     
     menu items: restart, last +1, last +5 (or max), last -1, last -5 (or min),
         option to show/hide next number to look for
@@ -29,11 +30,13 @@ const STD_SPACING = Main.width / 60;
 const TOP_BAR_HEIGHT = 30;
 const PLAY_AREA_WIDTH = Main.width - 4 * STD_SPACING;
 const PLAY_AREA_HEIGHT = Main.height - 2 * STD_SPACING - TOP_BAR_HEIGHT;
+
+// Upto 50. Will do upto 99 when two-sided.
 const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3], [3, 4], [3, 4],
                   [4, 4], [4, 4], [4, 4], [4, 5], [4, 5], [4, 5], [4, 6], [4, 6], [4, 6], [4, 6],
                   [5, 6], [5, 6], [5, 6], [5, 6], [5, 7], [5, 7], [5, 7], [5, 7], [6, 7], [6, 7],
                   [6, 7], [6, 7], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8],
-                  [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8], [6, 8]];
+                  [6, 8], [6, 8], [7, 9], [7, 9], [7, 9], [7, 9], [7, 9], [7, 9], [7, 9], [7, 9], [7, 9]];
 
 
 Main.Playstate.prototype = {
@@ -361,11 +364,11 @@ Main.Playstate.prototype = {
         var JumpToLabel = game.add.text(STD_SPACING, 160, "Jump to", 
                                                {font: 'bold 14pt Arial', fill:'#ffffff'});
         var menuBtnJumpTo3 = this.createNarrowButton(79, 156, "3", function() {this.startLevel(3); });
-        var menuBtnJumpTo6 = this.createNarrowButton(114, 156, "6", function() {this.startLevel(6); });
-        var menuBtnJumpTo12 = this.createNarrowButton(149, 156, "12", function() {this.startLevel(12); });
-        var menuBtnJumpTo24 = this.createNarrowButton(184, 156, "24", function() {this.startLevel(24); });
-        var menuBtnJumpTo36 = this.createNarrowButton(219, 156, "36", function() {this.startLevel(36); });
-        var menuBtnJumpTo48 = this.createNarrowButton(254, 156, "48", function() {this.startLevel(48); });
+        var menuBtnJumpTo10 = this.createNarrowButton(114, 156, "10", function() {this.startLevel(10); });
+        var menuBtnJumpTo20 = this.createNarrowButton(149, 156, "20", function() {this.startLevel(20); });
+        var menuBtnJumpTo30 = this.createNarrowButton(184, 156, "30", function() {this.startLevel(30); });
+        var menuBtnJumpTo40 = this.createNarrowButton(219, 156, "40", function() {this.startLevel(40); });
+        var menuBtnJumpTo50 = this.createNarrowButton(254, 156, "50", function() {this.startLevel(50); });
         
         this.menu.add(menuBtn1);
         this.menu.add(menuBtn2);
@@ -374,11 +377,11 @@ Main.Playstate.prototype = {
         this.menu.add(menuBtn5);
         this.menu.add(menuBtn6);
         this.menu.add(menuBtnJumpTo3);
-        this.menu.add(menuBtnJumpTo6);
-        this.menu.add(menuBtnJumpTo12);
-        this.menu.add(menuBtnJumpTo24);
-        this.menu.add(menuBtnJumpTo36);
-        this.menu.add(menuBtnJumpTo48);
+        this.menu.add(menuBtnJumpTo10);
+        this.menu.add(menuBtnJumpTo20);
+        this.menu.add(menuBtnJumpTo30);
+        this.menu.add(menuBtnJumpTo40);
+        this.menu.add(menuBtnJumpTo50);
         this.menu.add(JumpToLabel);
         this.menu.x = 5;
         this.menu.y = -300;
