@@ -10,6 +10,7 @@ Main.Loader.prototype = {
         game.load.audio('typing', 'assets/sounds/typing.ogg');
         game.load.audio('correct', 'assets/sounds/ding3.ogg');
         game.load.audio('wrong', 'assets/sounds/wrong4.ogg');
+        game.load.spritesheet('soundonoff', 'assets/images/soundonoff.png', 24, 24);
     },
     
     create: function() {

@@ -1,26 +1,8 @@
-/* Feature list
+/* Features probably to be added
     - two-sided game, with flipping
-    - fireworks on win (at least sound!, one of the main TODOs :))
-    v ding on correct click, atata on incorrect
-    v green frame on correct click, red on incorrect
-    - menu (docking?) --- main TODO
-    
-    - exclude lightgray tile colors
-    - add special character-pause to typed text?
-    - add nice (not handcoded) parameter tuning for typedtext
-    
-    - sound mute icon/code --- second to main TODO
-    v winning overlay
-    - localstorage? --- most likely one of the main TODOs :)
-    - try not counting the time when the game is paused
-    - statistics: longest to find number
-    v next number on by default
-    - 7x9 field for latest numbers, decide where to stop :) 
-    
-    menu items: restart, last +1, last +5 (or max), last -1, last -5 (or min),
-        option to show/hide next number to look for
-        option to countdown instead
-*/
+    - fireworks and sound on win
+    - localstorage for saving last number played
+    - statistics: longest to find number */
 
 Main.Playstate = function(game) {};
 
@@ -41,6 +23,7 @@ const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3]
 
 Main.Playstate.prototype = {
     create: function() {
+        Main.Assets.soundOn = true;
         this.gameIsOn = false;
         this.menuVisible = false;
         this.tutorialIsOn = true;
@@ -178,6 +161,12 @@ Main.Playstate.prototype = {
         this.menuVisible = !this.menuVisible;
     },
     
+    toggleSound: function() {
+        Main.Assets.soundOn = !Main.Assets.soundOn;
+        this.soundIconOn.visible = Main.Assets.soundOn;
+        this.soundIconOff.visible = !Main.Assets.soundOn;
+    },
+    
     // Interface creation functions
     createPlate: function(width, height) {
         var underrect = game.add.bitmapData(width, height);
@@ -276,7 +265,7 @@ Main.Playstate.prototype = {
         this.findNumberLabel = game.add.text(Main.width / 6, TOP_BAR_HEIGHT / 2,
                                              "Find #", {font: 'bold 16px Arial', fill:'#000'});
         this.findNumberLabel.anchor.setTo(0.5);
-        var menuBtnLabel = game.add.text(Main.width / 2, TOP_BAR_HEIGHT / 2, "Menu",
+        var menuBtnLabel = game.add.text(Main.width * 3 / 7, TOP_BAR_HEIGHT / 2, "Menu",
                                          {font: 'bold 16px Arial', fill:'#ffff90'});
         menuBtnLabel.anchor.setTo(0.5);
         this.timePassedLabel = game.add.text(Main.width * 5 / 6, TOP_BAR_HEIGHT / 2,
@@ -291,10 +280,26 @@ Main.Playstate.prototype = {
         menuButton.inputEnabled = true;
         menuButton.events.onInputDown.add(this.toggleMenu, this);
         
+        var invisibleSoundButton = game.add.bitmapData(TOP_BAR_HEIGHT, TOP_BAR_HEIGHT);
+        invisibleSoundButton.ctx.rect(0, 0, invisibleSoundButton.width, invisibleSoundButton.height);
+        invisibleSoundButton.ctx.fillStyle = 'rgba(255,255,255,0.01)';
+        invisibleSoundButton.ctx.fill();
+        var soundButton = game.add.sprite(Main.width * 2 / 3 - invisibleSoundButton.width, 0, invisibleSoundButton);
+        soundButton.inputEnabled = true;
+        soundButton.events.onInputDown.add(this.toggleSound, this);
+        
+        this.soundIconOn = game.add.sprite(Main.width * 2 / 3 - 24 - STD_SPACING, (30 - 24) / 2, 'soundonoff', 0);
+        this.soundIconOff = game.add.sprite(Main.width * 2 / 3 - 24 - STD_SPACING, (30 - 24) / 2, 'soundonoff', 1);
+        this.soundIconOn.visible = Main.Assets.soundOn;
+        this.soundIconOff.visible = !Main.Assets.soundOn;
+                
         this.menuBar.add(this.findNumberLabel);
         this.menuBar.add(menuBtnLabel);
         this.menuBar.add(menuButton);
         this.menuBar.add(this.timePassedLabel);
+        this.menuBar.add(this.soundIconOn);
+        this.menuBar.add(this.soundIconOff);
+        this.menuBar.add(soundButton);
         
         this.menuBar.x = 0
         this.menuBar.y = -TOP_BAR_HEIGHT - STD_SPACING;
@@ -359,7 +364,7 @@ Main.Playstate.prototype = {
         var menuBtn3 = this.createWideButton(63, "Restart", function() {this.startLevel(this.numbers); });
         var menuBtn4 = this.createWideButton(94, "Play next number", function() {this.startLevel(this.numbers + 1); });
         var menuBtn5 = this.createWideButton(125, "Play 5 higher", function() {this.startLevel(this.numbers + 5); });
-        var menuBtn6 = this.createWideButton(198, "Toggle sound NYI", function() { console.log("TODO: toggle sound"); });
+        var menuBtn6 = this.createWideButton(198, "Toggle sound NYI", function() { this.toggleSound });
 
         var JumpToLabel = game.add.text(STD_SPACING, 160, "Jump to", 
                                                {font: 'bold 14pt Arial', fill:'#ffffff'});

@@ -33,7 +33,7 @@ TypedText.prototype.update = function() {
         this.unTypedText = this.unTypedText.slice(1);
         this.nextTypeTime = game.time.now + this.typingDelayMin +
                             Math.random() * (this.typingDelayMax - this.typingDelayMin);
-        Main.Assets.typingSound.play();
+        if(Main.Assets.soundOn) Main.Assets.typingSound.play();
         
         if(this.unTypedText == '' && this.callback)
             this.nextTypeTime += this.delayBeforeCallback;

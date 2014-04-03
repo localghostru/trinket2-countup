@@ -98,13 +98,13 @@ NumberedTile.prototype = {
     correctlyClicked: function() {
         this.correctFrame.alpha = 0;
         game.add.tween(this.correctFrame).to({alpha: 1}, 300, Phaser.Easing.Quadratic.OUT, true, 0, 1, true);
-        Main.Assets.correctSound.play();
+        if(Main.Assets.soundOn) Main.Assets.correctSound.play();
     },
     
     wronglyClicked: function() {
         this.wrongFrame.alpha = 0;
         game.add.tween(this.wrongFrame).to({alpha: 1}, 300, Phaser.Easing.Quadratic.OUT, true, 0, 1, true);
-        Main.Assets.wrongSound.play();
+        if(Main.Assets.soundOn) Main.Assets.wrongSound.play();
     },
     
     onClickHandler: function(item) {
