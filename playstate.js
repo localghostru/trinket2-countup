@@ -23,7 +23,6 @@ const MAP_SIZE = [[2, 2], [2, 2], [2, 2], [2, 2], [2, 3], [2, 3], [3, 3], [3, 3]
 
 Main.Playstate.prototype = {
     create: function() {
-        Main.Assets.soundOn = true;
         this.gameIsOn = false;
         this.menuVisible = false;
         this.tutorialIsOn = true;
@@ -162,9 +161,10 @@ Main.Playstate.prototype = {
     },
     
     toggleSound: function() {
-        Main.Assets.soundOn = !Main.Assets.soundOn;
-        this.soundIconOn.visible = Main.Assets.soundOn;
-        this.soundIconOff.visible = !Main.Assets.soundOn;
+        game.sound.mute = !game.sound.mute;
+        this.soundIconOn.visible = !game.sound.mute;
+        this.soundIconOff.visible = game.sound.mute;
+        this.menuSoundButton.getAt(1).setText("Toggle sound (now " + (game.sound.mute?"off":"on") + ")");
     },
     
     // Interface creation functions
@@ -290,8 +290,8 @@ Main.Playstate.prototype = {
         
         this.soundIconOn = game.add.sprite(Main.width * 2 / 3 - 24 - STD_SPACING, (30 - 24) / 2, 'soundonoff', 0);
         this.soundIconOff = game.add.sprite(Main.width * 2 / 3 - 24 - STD_SPACING, (30 - 24) / 2, 'soundonoff', 1);
-        this.soundIconOn.visible = Main.Assets.soundOn;
-        this.soundIconOff.visible = !Main.Assets.soundOn;
+        this.soundIconOn.visible = !game.sound.mute;
+        this.soundIconOff.visible = game.sound.mute;
                 
         this.menuBar.add(this.findNumberLabel);
         this.menuBar.add(menuBtnLabel);
@@ -364,7 +364,8 @@ Main.Playstate.prototype = {
         var menuBtn3 = this.createWideButton(63, "Restart", function() {this.startLevel(this.numbers); });
         var menuBtn4 = this.createWideButton(94, "Play next number", function() {this.startLevel(this.numbers + 1); });
         var menuBtn5 = this.createWideButton(125, "Play 5 higher", function() {this.startLevel(this.numbers + 5); });
-        var menuBtn6 = this.createWideButton(198, "Toggle sound NYI", function() { this.toggleSound });
+        this.menuSoundButton = this.createWideButton(198, "Toggle sound", function() { this.toggleSound() });
+        this.menuSoundButton.getAt(1).setText("Toggle sound (now " + (game.sound.mute?"off":"on") + ")");
 
         var JumpToLabel = game.add.text(STD_SPACING, 160, "Jump to", 
                                                {font: 'bold 14pt Arial', fill:'#ffffff'});
@@ -380,7 +381,7 @@ Main.Playstate.prototype = {
         this.menu.add(menuBtn3);
         this.menu.add(menuBtn4);
         this.menu.add(menuBtn5);
-        this.menu.add(menuBtn6);
+        this.menu.add(this.menuSoundButton);
         this.menu.add(menuBtnJumpTo3);
         this.menu.add(menuBtnJumpTo10);
         this.menu.add(menuBtnJumpTo20);
